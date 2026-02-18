@@ -1,1 +1,0 @@
-The HCMV genome (GCF_000845245.1) has 169 CDS.

@@ -14,6 +14,8 @@ os.makedirs("mapped_reads", exist_ok=True)
 os.makedirs("kallisto", exist_ok=True)
 os.makedirs("data", exist_ok=True)
 os.makedirs("assembly", exist_ok=True)
+os.makedirs("fastq_file", exist_ok=True)
+os.makedirs("bowtie", exist_ok=True)
 
 #run all rules until we get the final PipelineReport.txt
 rule all:
