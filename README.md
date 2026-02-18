@@ -12,6 +12,7 @@ wrote rules in snakefile to create index with kallisto
 
 ### 3 
 wrote rule in snakefile to quantify the TPM of each CDS from the fasta file from step 2
+https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html
 create r script to use sleuth to compare the expressed genes between the 2 conditions, which outputs a tab-delimited table (in-class code)
 added rule in snakefile to call the R script
 

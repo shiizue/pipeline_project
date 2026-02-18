@@ -53,7 +53,8 @@ rule kallisto_quant:
     #saves each output to a folder for each sample
         "kallisto/{sample}/abundance.h5"
     shell:
-        "kallisto quant -i {input.index} -o {output} -b 10 -t 2 {input.r1} {input.r2}"
+    #1 bootstrap for now to test
+        "kallisto quant -i {input.index} -o kallisto/{wildcards.sample} -b 1 -t 1 {input.r1} {input.r2}"
         
 #rule to run the R script to use sleuth to compare the 2 conditions
 rule sleuth:
@@ -66,3 +67,31 @@ rule sleuth:
         "results/sleuth_results.txt"
     shell:
         "Rscript scripts/sleuth.R"
+
+# rule copy_hello_world:
+#     input:
+#         input_file="/home/slarosa/snakemake_demo/input.txt"
+#     output:
+#         output_file="/home/slarosa/snakemake_demo/output_dir/hello_world.txt"
+#     shell:
+#         "cp {input.input_file} {output.output_file}"
+
+# rule clean:
+#     shell:
+#         "rm -r ./output_dir"
+
+
+rule bowtie_build:
+    input:
+        fasta="GCA_000845245.1_ViralProj14559_genomic.fna"
+    shell:
+        "bowtie2-build {fasta} HCMV"
+
+rule bowtie_map:
+    input:
+        fq1="fastq_files/{sample}_R1.fastq",
+        fq2="fastq_files/{sample}_R2.fastq"
+    output:
+        "mapped_reads/{sample}.bam"
+    shell:
+        "bowtie2 --quiet -x HCMV -1 {input.fq1} -2 {input.fq2} -S {output} --al-conc-gz {sample}_mapped_%.fq.gz"
