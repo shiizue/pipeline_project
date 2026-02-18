@@ -1,10 +1,8 @@
-fastq_files
 .snakemake/
+fastq_files
 kallisto/
-HCMV.1.bt2
-HCMV.2.bt2
-HCMV.3.bt2
-HCMV.4.bt2
-HCMV.rev.1.bt2
-HCMV.rev.2.bt2
-HCMVmap.sam
+mapped_reads/
+assembly/
+bowtie/
+results/
+

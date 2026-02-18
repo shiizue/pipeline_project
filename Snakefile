@@ -13,6 +13,7 @@ os.makedirs("results", exist_ok=True)
 os.makedirs("mapped_reads", exist_ok=True)
 os.makedirs("kallisto", exist_ok=True)
 os.makedirs("data", exist_ok=True)
+os.makedirs("assembly", exist_ok=True)
 
 #run all rules until we get the final PipelineReport.txt
 rule all:
@@ -24,8 +25,9 @@ rule write_report:
     input:
     #include other steps later
         cds="results/cds.txt",
-        sleuth="results/sleuth_results.txt"
-        bowtie="results/bowtie_log.txt"
+        sleuth="results/sleuth_results.txt",
+        bowtie="results/bowtie_log.txt",
+        assembly=expand("assembly/{sample}/contigs.fasta", sample=samples)
     output:
         "PipelineReport.txt"
     run:
@@ -126,7 +128,7 @@ rule bowtie_map:
         mapped_log="mapped_reads/{sample}_bowtie_log.txt"
     shell:
     #just want filtered reads in a fastq file, don't care for sam output
-        "bowtie2 --quiet -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} -S /dev/null 2> {output.mapped_log} mapped_reads/{wildcards.sample}_bowtie.fastq --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq"
+        "bowtie2 --quiet -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq -S /dev/null 2> {output.mapped_log}"
 
 rule bowtie_log:
     input:
@@ -152,3 +154,12 @@ rule bowtie_log:
 
                 f.write(
                     f"Sample {sample} had {original_count} read pairs before and {mapped} read pairs after Bowtie2 filtering.\n")
+
+rule spades:
+    input:
+        r1="mapped_reads/{sample}_mapped_1.fastq",
+        r2="mapped_reads/{sample}_mapped_2.fastq"
+    output:
+        "assembly/{sample}/contigs.fasta"
+    shell:
+        "spades.py -k 127 -t 1 --only-assembler -1 {input.r1} -2 {input.r2} -o assembly/{wildcards.sample}/"
