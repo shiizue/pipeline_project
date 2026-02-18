@@ -1,7 +1,8 @@
 library(sleuth)
 library(dplyr)
 
-stab = read.table("sleuth_table.txt",header=TRUE)
+args = commandArgs(trailingOnly=TRUE)
+stab = read.table(args[1], header=TRUE)
 
 #initialize sleuth object using sleuth_prep function from sleuth library
 so = sleuth_prep(stab)

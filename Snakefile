@@ -1,4 +1,18 @@
+import os
+
 samples=['SRR5660030','SRR5660033','SRR5660044','SRR5660045']
+#dictionary to create table for sleuth later
+conditions={'SRR5660030': '2dpi',
+    'SRR5660033': '6dpi',
+    'SRR5660044': '2dpi',
+    'SRR5660045': '6dpi'
+}
+
+#set up folders for outputs
+os.makedirs("results", exist_ok=True)
+os.makedirs("mapped_reads", exist_ok=True)
+os.makedirs("kallisto", exist_ok=True)
+os.makedirs("data", exist_ok=True)
 
 #run all rules until we get the final PipelineReport.txt
 rule all:
@@ -56,42 +70,51 @@ rule kallisto_quant:
     #1 bootstrap for now to test
         "kallisto quant -i {input.index} -o kallisto/{wildcards.sample} -b 1 -t 1 {input.r1} {input.r2}"
         
+
+#rule to make table for sleuth to read
+rule sleuth_input_table:
+    input:
+        expand("kallisto/{sample}/abundance.h5", sample=samples)
+    output:
+        "data/sleuth_table.txt"
+    run:
+    #loop to write a tab delimited header and columns
+        with open(output[0],"w") as f:
+            f.write("sample\tpath\tcondition\n")
+            for sample in samples:
+                path =f'kallisto/{sample}'
+                condition=conditions[sample]
+                f.write(f'{sample}\t{path}\t{condition}\n')
+
 #rule to run the R script to use sleuth to compare the 2 conditions
 rule sleuth:
     input:
     #take every abundance.h5 file for each sample
         expand("kallisto/{sample}/abundance.h5", sample=samples),
-        "sleuth_table.txt"
+        table="data/sleuth_table.txt"
     output:
     #this result will get written to the final PipelineReport.txt
         "results/sleuth_results.txt"
     shell:
-        "Rscript scripts/sleuth.R"
+        "Rscript scripts/sleuth.R {input.table}"
 
-# rule copy_hello_world:
-#     input:
-#         input_file="/home/slarosa/snakemake_demo/input.txt"
-#     output:
-#         output_file="/home/slarosa/snakemake_demo/output_dir/hello_world.txt"
-#     shell:
-#         "cp {input.input_file} {output.output_file}"
-
-# rule clean:
-#     shell:
-#         "rm -r ./output_dir"
-
-
+#build bowtie2 index from the HCMV genome fasta
 rule bowtie_build:
     input:
-        fasta="GCA_000845245.1_ViralProj14559_genomic.fna"
+        fasta="data/GCA_000845245.1_ViralProj14559_genomic.fna"
+    output:
+        expand("bowtie/HCMV.{ext}", ext=["1.bt2","2.bt2","3.bt2","4.bt2","rev.1.bt2","rev.2.bt2"])
     shell:
-        "bowtie2-build {fasta} HCMV"
+        "bowtie2-build {input.fasta} bowtie/HCMV"
 
+#keep only reads that map
 rule bowtie_map:
     input:
-        fq1="fastq_files/{sample}_R1.fastq",
-        fq2="fastq_files/{sample}_R2.fastq"
+        fq1="fastq_files/{sample}_1.fastq",
+        fq2="fastq_files/{sample}_2.fastq",
+        index=expand("bowtie/HCMV.{ext}", ext=["1.bt2","2.bt2","3.bt2","4.bt2","rev.1.bt2","rev.2.bt2"])
     output:
-        "mapped_reads/{sample}.bam"
+        mapped_r1="mapped_reads/{sample}_mapped_1.fastq",
+        mapped_r2="mapped_reads/{sample}_mapped_2.fastq",
     shell:
-        "bowtie2 --quiet -x HCMV -1 {input.fq1} -2 {input.fq2} -S {output} --al-conc-gz {sample}_mapped_%.fq.gz"
+        "bowtie2 --quiet -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} -S mapped_reads/{wildcards.sample}_bowtie.sam --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq"
