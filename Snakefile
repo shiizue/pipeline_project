@@ -25,10 +25,16 @@ rule write_report:
     #include other steps later
         cds="results/cds.txt",
         sleuth="results/sleuth_results.txt"
+        bowtie="results/bowtie_log.txt"
     output:
         "PipelineReport.txt"
-    script:
-        "scripts/write_report.py"
+    run:
+        with open(output[0], "w") as f:
+            for input_file in [input.cds,input.sleuth,input.bowtie]:
+                with open(input_file) as r:
+                    f.write(r.read())
+                f.write("\n")
+
 
 #rule to run fasterq-dump for each fastq file by calling the above accession numbers
 #puts fastq files in their own folder
@@ -99,6 +105,7 @@ rule sleuth:
         "Rscript scripts/sleuth.R {input.table}"
 
 #build bowtie2 index from the HCMV genome fasta
+#this is what the next step is going to map to
 rule bowtie_build:
     input:
         fasta="data/GCA_000845245.1_ViralProj14559_genomic.fna"
@@ -107,7 +114,7 @@ rule bowtie_build:
     shell:
         "bowtie2-build {input.fasta} bowtie/HCMV"
 
-#keep only reads that map
+#keep only reads that map to the HCMV genome
 rule bowtie_map:
     input:
         fq1="fastq_files/{sample}_1.fastq",
@@ -116,5 +123,32 @@ rule bowtie_map:
     output:
         mapped_r1="mapped_reads/{sample}_mapped_1.fastq",
         mapped_r2="mapped_reads/{sample}_mapped_2.fastq",
+        mapped_log="mapped_reads/{sample}_bowtie_log.txt"
     shell:
-        "bowtie2 --quiet -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} -S mapped_reads/{wildcards.sample}_bowtie.sam --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq"
+    #just want filtered reads in a fastq file, don't care for sam output
+        "bowtie2 --quiet -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} -S /dev/null 2> {output.mapped_log} mapped_reads/{wildcards.sample}_bowtie.fastq --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq"
+
+rule bowtie_log:
+    input:
+        original=expand("fastq_files/{sample}_1.fastq", sample=samples),
+        logs=expand("mapped_reads/{sample}_bowtie_log.txt", sample=samples)
+    output:
+        "results/bowtie_log.txt"
+    run:
+        with open(output[0], "w") as f:
+            for sample in samples:
+                # count before mapping
+                with open(f"fastq_files/{sample}_1.fastq") as fastq:
+                #reads only on 4th line
+                    original_count = sum(1 for line in fastq) // 4
+
+                # parse concordantly aligned reads from bowtie log
+                #these are the reads that actually mapped and we're filtering for
+                mapped = 0
+                with open(f"mapped_reads/{sample}_bowtie_log.txt") as log:
+                    for line in log:
+                        if "concordantly exactly 1 time" in line or "concordantly >1 times" in line:
+                            mapped += int(line.strip().split()[0])
+
+                f.write(
+                    f"Sample {sample} had {original_count} read pairs before and {mapped} read pairs after Bowtie2 filtering.\n")
