@@ -27,12 +27,14 @@ rule write_report:
         cds="results/cds.txt",
         sleuth="results/sleuth_results.txt",
         bowtie="results/bowtie_log.txt",
-        assembly=expand("assembly/{sample}/contigs.fasta", sample=samples)
+        #doesn't actually write anything from SPAdes, just needs to know it has to run this rule
+        assembly=expand("assembly/{sample}/contigs.fasta", sample=samples),
+        blast="results/blast_results.txt"
     output:
         "PipelineReport.txt"
     run:
         with open(output[0], "w") as f:
-            for input_file in [input.cds,input.sleuth,input.bowtie]:
+            for input_file in [input.cds,input.sleuth,input.bowtie,input.blast]:
                 with open(input_file) as r:
                     f.write(r.read())
                 f.write("\n")
@@ -163,3 +165,25 @@ rule spades:
         "assembly/{sample}/contigs.fasta"
     shell:
         "spades.py -k 127 -t 1 --only-assembler -1 {input.r1} -2 {input.r2} -o assembly/{wildcards.sample}/"
+
+rule blast:
+    input:
+        "assembly/{sample}/contigs.fasta"
+    output:
+        "results/{sample}_blast.txt"
+    script:
+        "scripts/blast.py"
+
+rule blast_results:
+    input:
+        expand("results/{sample}_blast.txt",sample=samples)
+    output:
+        "results/blast_results.txt"
+    run:
+        with open(output[0], "w") as f:
+            for sample, blast_file in zip(samples, input):
+                f.write(f"{sample}:\n")
+                f.write("sacc\tpident\tlength\tqstart\tqend\tsstart\tsend\tbitscore\tevalue\tstitle\n")
+                with open(blast_file) as b:
+                    f.write(b.read())
+                f.write("\n")
