@@ -216,4 +216,5 @@ rule cleanup:
         rm -f betaherpesvirinae.fasta
         rm -f PipelineReport.txt
         rm -f md5sum.txt
+        rm -f data/sleuth_table.txt
         """
