@@ -1,0 +1,5 @@
+sample	path	condition
+SRR5660030	kallisto/SRR5660030	2dpi
+SRR5660033	kallisto/SRR5660033	6dpi
+SRR5660044	kallisto/SRR5660044	2dpi
+SRR5660045	kallisto/SRR5660045	6dpi

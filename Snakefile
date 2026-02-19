@@ -14,8 +14,9 @@ os.makedirs("mapped_reads", exist_ok=True)
 os.makedirs("kallisto", exist_ok=True)
 os.makedirs("data", exist_ok=True)
 os.makedirs("assembly", exist_ok=True)
-os.makedirs("fastq_file", exist_ok=True)
+os.makedirs("fastq_files", exist_ok=True)
 os.makedirs("bowtie", exist_ok=True)
+os.makedirs("blast", exist_ok=True)
 
 #run all rules until we get the final PipelineReport.txt
 rule all:
@@ -25,16 +26,14 @@ rule all:
 #rule to write PipelineReport by calling write_report.py
 rule write_report:
     input:
-    #include other steps later
         cds="results/cds.txt",
         sleuth="results/sleuth_results.txt",
         bowtie="results/bowtie_log.txt",
-        #doesn't actually write anything from SPAdes, just needs to know it has to run this rule
-        assembly=expand("assembly/{sample}/contigs.fasta", sample=samples),
         blast="results/blast_results.txt"
     output:
         "PipelineReport.txt"
     run:
+        #gets the individual output files from these steps and then adds them all to the final PipelineReport.txt
         with open(output[0], "w") as f:
             for input_file in [input.cds,input.sleuth,input.bowtie,input.blast]:
                 with open(input_file) as r:
@@ -43,7 +42,7 @@ rule write_report:
 
 
 #rule to run fasterq-dump for each fastq file by calling the above accession numbers
-#puts fastq files in their own folder
+#this rule will be skipped for the test data since it will already have fastq files to use
 rule fasterq_dump:
     output:
         "fastq_files/{sample}_1.fastq",
@@ -69,7 +68,7 @@ rule kallisto_index:
     shell:
         "kallisto index -i {output} {input}"
 
-#rule to quantify TPM using kallisto, referencing code from in class
+#rule to quantify TPM using kallisto
 rule kallisto_quant:
     input:
         index = "kallisto/hcmv.idx",
@@ -79,8 +78,7 @@ rule kallisto_quant:
     #saves each output to a folder for each sample
         "kallisto/{sample}/abundance.h5"
     shell:
-    #1 bootstrap for now to test
-        "kallisto quant -i {input.index} -o kallisto/{wildcards.sample} -b 1 -t 1 {input.r1} {input.r2}"
+        "kallisto quant -i {input.index} -o kallisto/{wildcards.sample} -b 30 {input.r1} {input.r2}"
         
 
 #rule to make table for sleuth to read
@@ -91,6 +89,7 @@ rule sleuth_input_table:
         "data/sleuth_table.txt"
     run:
     #loop to write a tab delimited header and columns
+    #uses conditions dictionary from above
         with open(output[0],"w") as f:
             f.write("sample\tpath\tcondition\n")
             for sample in samples:
@@ -134,6 +133,7 @@ rule bowtie_map:
     #just want filtered reads in a fastq file, don't care for sam output
         "bowtie2 --quiet -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq -S /dev/null 2> {output.mapped_log}"
 
+#rule to see how many reads there are before and after bowtie filtering
 rule bowtie_log:
     input:
         original=expand("fastq_files/{sample}_1.fastq", sample=samples),
@@ -166,11 +166,22 @@ rule spades:
     output:
         "assembly/{sample}/contigs.fasta"
     shell:
-        "spades.py -k 127 -t 1 --only-assembler -1 {input.r1} -2 {input.r2} -o assembly/{wildcards.sample}/"
+        "spades.py -k 127 --only-assembler -1 {input.r1} -2 {input.r2} -o assembly/{wildcards.sample}/"
+
+rule blast_db:
+    output:
+        db=expand("blast/betaherpesvirinae.{ext}", ext=["nhr","nin","nsq"])
+    shell:
+        """
+        datasets download virus genome taxon Betaherpesvirinae --refseq --include genome
+        unzip -o ncbi_dataset.zip
+        makeblastdb -in ncbi_dataset/data/genomic.fna -out blast/betaherpesvirinae -title betaherpesvirinae -dbtype nucl
+        """
 
 rule blast:
     input:
-        "assembly/{sample}/contigs.fasta"
+        contigs="assembly/{sample}/contigs.fasta",
+        db=expand("blast/betaherpesvirinae.{ext}", ext=["nhr","nin","nsq"])
     output:
         "results/{sample}_blast.txt"
     script:
@@ -189,3 +200,20 @@ rule blast_results:
                 with open(blast_file) as b:
                     f.write(b.read())
                 f.write("\n")
+                
+rule cleanup:
+    shell:
+        """
+        rm -rf results/
+        rm -rf mapped_reads/
+        rm -rf kallisto/
+        rm -rf assembly/
+        rm -rf fastq_files/
+        rm -rf bowtie/
+        rm -rf blast/
+        rm -rf ncbi_dataset/
+        rm -f ncbi_dataset.zip
+        rm -f betaherpesvirinae.fasta
+        rm -f PipelineReport.txt
+        rm -f md5sum.txt
+        """
