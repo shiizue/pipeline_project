@@ -27,8 +27,11 @@ This rule is still included in the Snakefile, but does not run since the rules t
 ### Sample Input Reads
 
 fastq files with only the first 10,000 reads per sample are provided in `test_data/`. To run the full pipeline with this data:
+
 `snakemake -c1`
+
 or
+
 `snakemake -c2`
 
 ### Output
@@ -41,6 +44,7 @@ The pipeline will create a file called `PipelineReport.txt` in the root director
 
 ### Cleanup
 To remove all output files/folders created from running the pipeline:
+
 `snakemake cleanup -c1`
 
 ## References
