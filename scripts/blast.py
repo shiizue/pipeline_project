@@ -1,3 +1,10 @@
+"""
+blast.py
+Uses BioPython to retrieve the longest contig from each sample's assembly and writes it to a fasta file.
+Queries BLAST's nucleotide database with these fasta files to find the closest aligning sequences in the Betaherpesvirinae subfamily.
+Writes the top 5 hits to a tab-delimited table, to be included in the final pipeline report.
+"""
+
 import os
 from Bio import SeqIO
 
@@ -6,11 +13,11 @@ sample = snakemake.wildcards.sample
 outfile = snakemake.output[0]
 path = f"blast/betaherpesvirinae"
 
-#sort contigs by length to retrieve only the longest contig
+# sort contigs by length to retrieve only the longest contig
 records = list(SeqIO.parse(contigs, "fasta"))
 longest_contig = max(records, key=lambda r: len(r.seq))
 
-#write that contig to its own fasta file so we can query it into blast
+# write that contig to its own fasta file so we can query it into blast
 longest_contig_fasta = f"assembly/{sample}/longest_contig.fasta"
 with open(longest_contig_fasta, "w") as f:
     SeqIO.write(longest_contig, f, "fasta")

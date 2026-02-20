@@ -1,3 +1,7 @@
+################################################################################
+# COMP 483 - Pipeline Project
+################################################################################
+
 import os
 
 samples=['SRR5660030','SRR5660033','SRR5660044','SRR5660045']
@@ -7,6 +11,10 @@ conditions={'SRR5660030': '2dpi',
     'SRR5660044': '2dpi',
     'SRR5660045': '6dpi'
 }
+
+################################################################################
+# FINAL REPORT OUTPUT SETUP
+################################################################################
 
 #run all rules until we get the final PipelineReport.txt
 rule all:
@@ -30,6 +38,11 @@ rule write_report:
                     f.write(r.read())
                 f.write("\n")
 
+
+################################################################################
+# TRANSCRIPTOME FASTQ FILE RETRIEVAL (Step 1)
+################################################################################
+
 #rule to run fasterq-dump for each fastq file by calling the above accession numbers
 #this rule will be skipped for the test data since it will already have fastq files to use
 rule fasterq_dump:
@@ -38,6 +51,10 @@ rule fasterq_dump:
         "fastq_files/{sample}_2.fastq"
     shell:
         "fasterq-dump {wildcards.sample} --outdir fastq_files/"
+
+################################################################################
+# GENOME RETRIEVAL AND CDS EXTRACTION (Step 2)
+################################################################################
 
 #rule to download HCMV genome   
 rule get_genome:
@@ -60,6 +77,10 @@ rule get_cds:
         cds="results/cds.txt"
     script:
         "scripts/cds.py"  
+
+################################################################################
+# TPM QUANTIFICATION AND COMPARISON OF EXPRESSED GENES (Step 3)
+################################################################################
 
 #rule to use kallisto to build hcmv index using the fasta of the CDS's 
 rule kallisto_index:
@@ -111,6 +132,10 @@ rule sleuth:
     shell:
         "Rscript scripts/sleuth.R {input.table}"
 
+################################################################################
+# BOWTIE2 MAPPING OF READS (Step 4)
+################################################################################
+
 #build bowtie2 index from the HCMV genome fasta
 #this is what the next step is going to map to
 rule bowtie_build:
@@ -161,6 +186,10 @@ rule bowtie_log:
                 f.write(
                     f"Sample {sample} had {original_count} read pairs before and {mapped} read pairs after Bowtie2 filtering.\n")
 
+################################################################################
+# ASSEMBLY (Step 5)
+################################################################################
+
 #use SPAdes to generate an assembly for each sample
 rule spades:
     input:
@@ -170,6 +199,10 @@ rule spades:
         "assembly/{sample}/contigs.fasta"
     shell:
         "spades.py -k 127 --only-assembler -1 {input.r1} -2 {input.r2} -o assembly/{wildcards.sample}/"
+
+################################################################################
+# BLAST (Step 6)
+################################################################################
 
 #before we can query blast, need to make a local database of sequences from the Betaherpesvirinae subfamily
 rule blast_db:
@@ -206,6 +239,10 @@ rule blast_results:
                     f.write(b.read())
                 f.write("\n")
              
+################################################################################
+# CLEANUP
+################################################################################
+
 #clean up output files between runs               
 rule cleanup:
     shell:

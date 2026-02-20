@@ -1,3 +1,7 @@
+# sleuth.R
+# Using sleuth and dplyr packages, performs differential expression analysis between the 2dpi and 6dpi samples.
+# Creates a tab-delimited table of significant transcripts to be written to final pipeline report.
+
 library(sleuth)
 library(dplyr)
 
