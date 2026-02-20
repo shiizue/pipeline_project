@@ -8,16 +8,6 @@ conditions={'SRR5660030': '2dpi',
     'SRR5660045': '6dpi'
 }
 
-#set up folders for outputs
-os.makedirs("results", exist_ok=True)
-os.makedirs("mapped_reads", exist_ok=True)
-os.makedirs("kallisto", exist_ok=True)
-os.makedirs("data", exist_ok=True)
-os.makedirs("assembly", exist_ok=True)
-os.makedirs("fastq_files", exist_ok=True)
-os.makedirs("bowtie", exist_ok=True)
-os.makedirs("blast", exist_ok=True)
-
 #run all rules until we get the final PipelineReport.txt
 rule all:
     input:
@@ -40,7 +30,6 @@ rule write_report:
                     f.write(r.read())
                 f.write("\n")
 
-
 #rule to run fasterq-dump for each fastq file by calling the above accession numbers
 #this rule will be skipped for the test data since it will already have fastq files to use
 rule fasterq_dump:
@@ -49,6 +38,19 @@ rule fasterq_dump:
         "fastq_files/{sample}_2.fastq"
     shell:
         "fasterq-dump {wildcards.sample} --outdir fastq_files/"
+
+#rule to download HCMV genome   
+rule get_genome:
+    output:
+        "data/GCF_000845245.1_ViralProj14559_genomic.fna"
+    shell:
+        """
+        datasets download genome accession GCF_000845245.1 --filename GCF_000845245.1.zip --include genome
+        unzip GCF_000845245.1.zip -d data/
+        cp data/ncbi_dataset/data/GCF_000845245.1/GCF_000845245.1_ViralProj14559_genomic.fna data/
+        rm -f GCF_000845245.1.zip
+        rm -rf data/ncbi_dataset
+        """
 
 #rule to get the total # of CDS and get a fasta file with protein_id and CDS's by calling cds.py
 #this will get written to the final PipelineReport.txt
@@ -72,8 +74,8 @@ rule kallisto_index:
 rule kallisto_quant:
     input:
         index = "kallisto/hcmv.idx",
-        r1 = "fastq_files/{sample}_1.fastq",
-        r2 = "fastq_files/{sample}_2.fastq"
+        r1 = "test_data/{sample}_1.fastq",
+        r2 = "test_data/{sample}_2.fastq"
     output:
     #saves each output to a folder for each sample
         "kallisto/{sample}/abundance.h5"
@@ -113,17 +115,17 @@ rule sleuth:
 #this is what the next step is going to map to
 rule bowtie_build:
     input:
-        fasta="data/GCA_000845245.1_ViralProj14559_genomic.fna"
+        "data/GCF_000845245.1_ViralProj14559_genomic.fna"
     output:
         expand("bowtie/HCMV.{ext}", ext=["1.bt2","2.bt2","3.bt2","4.bt2","rev.1.bt2","rev.2.bt2"])
     shell:
-        "bowtie2-build {input.fasta} bowtie/HCMV"
+        "bowtie2-build {input} bowtie/HCMV"
 
 #keep only reads that map to the HCMV genome
 rule bowtie_map:
     input:
-        fq1="fastq_files/{sample}_1.fastq",
-        fq2="fastq_files/{sample}_2.fastq",
+        fq1="test_data/{sample}_1.fastq",
+        fq2="test_data/{sample}_2.fastq",
         index=expand("bowtie/HCMV.{ext}", ext=["1.bt2","2.bt2","3.bt2","4.bt2","rev.1.bt2","rev.2.bt2"])
     output:
         mapped_r1="mapped_reads/{sample}_mapped_1.fastq",
@@ -136,7 +138,7 @@ rule bowtie_map:
 #rule to see how many reads there are before and after bowtie filtering
 rule bowtie_log:
     input:
-        original=expand("fastq_files/{sample}_1.fastq", sample=samples),
+        original=expand("test_data/{sample}_1.fastq", sample=samples),
         logs=expand("mapped_reads/{sample}_bowtie_log.txt", sample=samples)
     output:
         "results/bowtie_log.txt"
@@ -144,7 +146,7 @@ rule bowtie_log:
         with open(output[0], "w") as f:
             for sample in samples:
                 # count before mapping
-                with open(f"fastq_files/{sample}_1.fastq") as fastq:
+                with open(f"test_data/{sample}_1.fastq") as fastq:
                 #reads only on 4th line
                     original_count = sum(1 for line in fastq) // 4
 
@@ -159,6 +161,7 @@ rule bowtie_log:
                 f.write(
                     f"Sample {sample} had {original_count} read pairs before and {mapped} read pairs after Bowtie2 filtering.\n")
 
+#use SPAdes to generate an assembly for each sample
 rule spades:
     input:
         r1="mapped_reads/{sample}_mapped_1.fastq",
@@ -168,16 +171,17 @@ rule spades:
     shell:
         "spades.py -k 127 --only-assembler -1 {input.r1} -2 {input.r2} -o assembly/{wildcards.sample}/"
 
+#before we can query blast, need to make a local database of sequences from the Betaherpesvirinae subfamily
 rule blast_db:
     output:
         db=expand("blast/betaherpesvirinae.{ext}", ext=["nhr","nin","nsq"])
     shell:
         """
         datasets download virus genome taxon Betaherpesvirinae --refseq --include genome
-        unzip -o ncbi_dataset.zip
-        makeblastdb -in ncbi_dataset/data/genomic.fna -out blast/betaherpesvirinae -title betaherpesvirinae -dbtype nucl
+        unzip ncbi_dataset.zip -d data/
+        makeblastdb -in data/ncbi_dataset/data/genomic.fna -out blast/betaherpesvirinae -title betaherpesvirinae -dbtype nucl
         """
-
+#call Python script to get longest contig from each SPAdes assebly, then query it to the nr nucleotide database
 rule blast:
     input:
         contigs="assembly/{sample}/contigs.fasta",
@@ -187,6 +191,7 @@ rule blast:
     script:
         "scripts/blast.py"
 
+#get blast results from blast.py and write them to a tab-delimited table for each sample
 rule blast_results:
     input:
         expand("results/{sample}_blast.txt",sample=samples)
@@ -200,7 +205,8 @@ rule blast_results:
                 with open(blast_file) as b:
                     f.write(b.read())
                 f.write("\n")
-                
+             
+#clean up output files between runs               
 rule cleanup:
     shell:
         """
@@ -214,7 +220,6 @@ rule cleanup:
         rm -rf ncbi_dataset/
         rm -f ncbi_dataset.zip
         rm -f betaherpesvirinae.fasta
-        rm -f PipelineReport.txt
         rm -f md5sum.txt
-        rm -f data/sleuth_table.txt
+        rm -rf data/
         """
