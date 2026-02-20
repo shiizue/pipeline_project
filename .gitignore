@@ -1,8 +1,1 @@
 .snakemake/
-fastq_files
-kallisto/
-mapped_reads/
-assembly/
-bowtie/
-results/
-
