@@ -1,41 +1,31 @@
-# NCBI Datasets
+# pipeline_project
+COMP438 independent project
+### 1
+created txt file with the accession numbers, one per line
+used a script to fasterq-dump each one in a loop (Googled 'fasterq dump multiple accessions)
 
-https://www.ncbi.nlm.nih.gov/datasets
+### 2
+created a python script (cds.py) to use biopython to get genome record (biopython docs https://biopython.org/docs/1.75/api/Bio.SeqFeature.html)
+get refseq protein id and cds from record and write to a new fasta and pipeline report
+(https://github.com/peterjc/biopython_workshop/blob/master/using_seqfeatures/README.rst)
+wrote rules in snakefile to create index with kallisto
 
-This zip archive contains an NCBI Datasets Data Package.
+### 3 
+wrote rule in snakefile to quantify the TPM of each CDS from the fasta file from step 2
+https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html
 
-NCBI Datasets Data Packages can include sequence, annotation and other data files, and metadata in one or more data report files.
-Data report files are in JSON Lines format.
+create r script to use sleuth to compare the expressed genes between the 2 conditions, which outputs a tab-delimited table (in-class code)
+added rule in snakefile to call the R script
 
----
-## FAQs
-### Where is the data I requested?
+converted script from step 1 into rule in snakemake
+created rule in snakemake to write all the results from each step into PipelineReport
 
-Your data is in the subdirectory `ncbi_dataset/data/` contained within this zip archive.
+### 4
+https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml
 
-### I still can't find my data, can you help?
+https://wresch.github.io/2013/06/20/commandline-args-in-R.html#:~:text=args%20<-%20commandArgs(trailingOnly%20=,the%20arguments%20after%20--args%20.
 
-We have identified a bug affecting Mac Safari users. When downloading data from the NCBI Datasets web interface, you may see only this README file after the download has completed (while other files appear to be missing).
-As a workaround to prevent this issue from recurring, we recommend disabling automatic zip archive extraction in Safari until Apple releases a bug fix.
-For more information, visit:
-https://www.ncbi.nlm.nih.gov/datasets/docs/reference-docs/mac-zip-bug/
+https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#snakefiles-and-rules
+https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#snakefiles-and-rules
 
-### How do I work with JSON Lines data reports?
-
-Visit our JSON Lines data report documentation page:
-https://www.ncbi.nlm.nih.gov/datasets/docs/v2/tutorials/working-with-jsonl-data-reports/
-
-### What is NCBI Datasets?
-
-NCBI Datasets is a resource that lets you easily gather data from across NCBI databases. Find and download gene, transcript, protein and genome sequences, annotation and metadata.
-
-### Where can I find NCBI Datasets documentation?
-
-Visit the NCBI Datasets documentation pages:
-https://www.ncbi.nlm.nih.gov/datasets/docs/
-
----
-
-National Center for Biotechnology Information
-National Library of Medicine
-info@ncbi.nlm.nih.gov
+### 5
