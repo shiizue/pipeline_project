@@ -7,6 +7,7 @@ Counts the total CDS to be written to the final pipeline report.
 
 from Bio import Entrez, SeqIO
 
+# if running locally, replace with your own email (but not really necessary)
 Entrez.email = "skyel1005@gmail.com"
 # I got the RefSeq from the NCBI page for GCF_000845245.1/ViralProj14559
 refseq = "NC_006273.2"
