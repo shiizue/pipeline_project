@@ -131,7 +131,7 @@ rule bowtie_map:
         mapped_log="mapped_reads/{sample}_bowtie_log.txt"
     shell:
     #just want filtered reads in a fastq file, don't care for sam output
-        "bowtie2 --quiet -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq -S /dev/null 2> {output.mapped_log}"
+        "bowtie2 -x bowtie/HCMV -1 {input.fq1} -2 {input.fq2} --al-conc mapped_reads/{wildcards.sample}_mapped_%.fastq -S /dev/null 2> {output.mapped_log}"
 
 #rule to see how many reads there are before and after bowtie filtering
 rule bowtie_log:
