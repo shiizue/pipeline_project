@@ -1,32 +1,54 @@
-# pipeline_project
-COMP438 independent project
-### 1
-created txt file with the accession numbers, one per line
-used a script to fasterq-dump each one in a loop (Googled 'fasterq dump multiple accessions)
+# HCMV Transcriptome Pipeline Project
 
-### 2
-created a python script (cds.py) to use biopython to get genome record (biopython docs https://biopython.org/docs/1.75/api/Bio.SeqFeature.html)
-get refseq protein id and cds from record and write to a new fasta and pipeline report
-(https://github.com/peterjc/biopython_workshop/blob/master/using_seqfeatures/README.rst)
-wrote rules in snakefile to create index with kallisto
+COMP 483 independent project comparing Human cytomegalovirus (HCMV) transcriptomes 2- and 6-days post-infection.
 
-### 3 
-wrote rule in snakefile to quantify the TPM of each CDS from the fasta file from step 2
-https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html
+## Dependencies
 
-create r script to use sleuth to compare the expressed genes between the 2 conditions, which outputs a tab-delimited table (in-class code)
-added rule in snakefile to call the R script
+- [Python 3](https://www.python.org/downloads/)
+- [BioPython](https://biopython.org/wiki/Getting_Started)
+- [Snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html)
+- [kallisto](https://pachterlab.github.io/kallisto/download)
+- [R](https://www.r-project.org) and [sleuth](https://pachterlab.github.io/sleuth/download)
+- [Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
+- [SPAdes](https://ablab.github.io/spades/)
+- [BLAST+](https://blast.ncbi.nlm.nih.gov/doc/blast-help/downloadblastdata.html#downloadblastdata)
+- [NCBI datasets CLI](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/command-line-tools/download-and-install/)
 
-converted script from step 1 into rule in snakemake
-created rule in snakemake to write all the results from each step into PipelineReport
+All dependencies can also be installed by creating an environment in [conda](https://www.anaconda.com/docs/getting-started/miniconda/main) with the needed tools/packages. See [Managing environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) and [sleuth installation via conda](https://github.com/pachterlab/sleuth)
 
-### 4
-https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml
+## Running the Pipeline
 
-https://wresch.github.io/2013/06/20/commandline-args-in-R.html#:~:text=args%20<-%20commandArgs(trailingOnly%20=,the%20arguments%20after%20--args%20.
+### All Input Reads
 
-https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#snakefiles-and-rules
-https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#snakefiles-and-rules
+For the complete pipeline (without test data), the rule `fasterq_dump` in the Snakefile runs the fasterq-dump command for each sample, creating fastq files that were used in the rest of the pipeline, resulting in `La_Rosa_PipelineReport.txt`.
 
-### 5
-https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000845245.1/
+This rule is still included in the Snakefile, but does not run since the rules that depend on fastq files as input will already have those files provided in `test_data/`
+
+### Sample Input Reads
+
+fastq files with only the first 10,000 reads per sample are provided in `test_data/`. To run the full pipeline with this data:
+`snakemake -c1`
+or
+`snakemake -c2`
+
+### Output
+
+The pipeline will create a file called `PipelineReport.txt` in the root directory. This report contains the following information:
+- Number of coding sequences (CDS) in the HCMV genome
+- A tab-delimited table of the differentially expressed genes between the 2dpi and 6dpi samples
+- The number of read pairs for each sample before and after Bowtie2 filtering
+- A tab-delimited table showing the top 5 BLAST hits for each sample's longest contig from its assembly
+
+### Cleanup
+To remove all output files/folders created from running the pipeline:
+`snakemake cleanup -c1`
+
+## References
+
+- [Biopython SeqFeature documentation](https://biopython.org/docs/1.75/api/Bio.SeqFeature.html)
+- [Biopython SeqFeature workshop](https://github.com/peterjc/biopython_workshop/blob/master/using_seqfeatures/README.rst)
+- [Snakemake documentation](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html)
+- [Bowtie2 manual](https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml)
+- [Command line arguments in R scripts](https://wresch.github.io/2013/06/20/commandline-args-in-R.html#:~:text=args%20)
+- [NCBI datasets HCMV genome](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000845245.1/)
+- [Cheng et al. 2017](https://www.ncbi.nlm.nih.gov/pubmed/29158406)
