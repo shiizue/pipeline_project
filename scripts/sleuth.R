@@ -1,6 +1,7 @@
 library(sleuth)
 library(dplyr)
 
+#this makes sure it will use the input table generated during the pipeline
 args = commandArgs(trailingOnly=TRUE)
 stab = read.table(args[1], header=TRUE)
 

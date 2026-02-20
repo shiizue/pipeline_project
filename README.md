@@ -29,3 +29,4 @@ https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#snakefiles-and-
 https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#snakefiles-and-rules
 
 ### 5
+https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000845245.1/

@@ -4,6 +4,7 @@ Entrez.email = "skyel1005@gmail.com"
 #I got the RefSeq from the NCBI page for GCF_000845245.1/ViralProj14559
 refseq = "NC_006273.2"
 
+#retrieve refseq data from NCBI
 handle = Entrez.efetch(db="nucleotide", id=refseq, rettype="gb", retmode="text")
 record = SeqIO.read(handle, "genbank")
 

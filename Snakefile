@@ -210,16 +210,13 @@ rule blast_results:
 rule cleanup:
     shell:
         """
-        rm -rf results/
-        rm -rf mapped_reads/
-        rm -rf kallisto/
         rm -rf assembly/
-        rm -rf fastq_files/
-        rm -rf bowtie/
         rm -rf blast/
-        rm -rf ncbi_dataset/
-        rm -f ncbi_dataset.zip
-        rm -f betaherpesvirinae.fasta
-        rm -f md5sum.txt
+        rm -rf bowtie/
         rm -rf data/
+        rm -rf kallisto/
+        rm -rf mapped_reads/
+        rm -rf results/
+        rm -rf ncbi_dataset.zip
+        rm -rf PipelineReport.txt
         """
