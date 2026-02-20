@@ -1,6 +1,6 @@
 # HCMV Transcriptome Pipeline Project
 
-COMP 483 independent project comparing Human cytomegalovirus (HCMV) transcriptomes 2- and 6-days post-infection.
+COMP 483 independent project comparing Human cytomegalovirus (HCMV) transcriptomes 2- and 6-days post-infection (dpi).
 
 ## Dependencies
 
@@ -47,7 +47,7 @@ To remove all output files/folders created from running the pipeline:
 
 `snakemake cleanup -c1`
 
-## References
+## References and Resources Used
 
 - [Biopython SeqFeature documentation](https://biopython.org/docs/1.75/api/Bio.SeqFeature.html)
 - [Biopython SeqFeature workshop](https://github.com/peterjc/biopython_workshop/blob/master/using_seqfeatures/README.rst)
@@ -56,3 +56,4 @@ To remove all output files/folders created from running the pipeline:
 - [Command line arguments in R scripts](https://wresch.github.io/2013/06/20/commandline-args-in-R.html#:~:text=args%20)
 - [NCBI datasets HCMV genome](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000845245.1/)
 - [Cheng et al. 2017](https://www.ncbi.nlm.nih.gov/pubmed/29158406)
+- Lecture slides, example code, and other instructional materials courtesy of Dr. Heather Wheeler
