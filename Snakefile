@@ -63,7 +63,7 @@ rule get_genome:
     shell:
         """
         datasets download genome accession GCF_000845245.1 --filename GCF_000845245.1.zip --include genome
-        unzip GCF_000845245.1.zip -d data/
+        unzip -o GCF_000845245.1.zip -d data/
         cp data/ncbi_dataset/data/GCF_000845245.1/GCF_000845245.1_ViralProj14559_genomic.fna data/
         rm -f GCF_000845245.1.zip
         rm -rf data/ncbi_dataset
@@ -211,7 +211,7 @@ rule blast_db:
     shell:
         """
         datasets download virus genome taxon Betaherpesvirinae --refseq --include genome
-        unzip ncbi_dataset.zip -d data/
+        unzip -o ncbi_dataset.zip -d data/
         makeblastdb -in data/ncbi_dataset/data/genomic.fna -out blast/betaherpesvirinae -title betaherpesvirinae -dbtype nucl
         """
 #call Python script to get longest contig from each SPAdes assebly, then query it to the nr nucleotide database
