@@ -47,6 +47,8 @@ To remove all output files/folders created from running the pipeline:
 
 `snakemake cleanup -c1`
 
+Note that this will also remove the `PipelineReport.txt` generated from running the pipeline.
+
 ## References and Resources Used
 
 - [Biopython SeqFeature documentation](https://biopython.org/docs/1.75/api/Bio.SeqFeature.html)
